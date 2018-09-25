@@ -5,35 +5,85 @@
 
 
 class PIDController:
-    def __init__(self, kp = 0.0, ki = 0.0, kd = 0.0, max_windup = 10):
-        #TODO
-        pass
+    def __init__(self, kp=0.0, ki=0.0, kd=0.0, max_windup=10):
+        # The PID controller can be initalized with a specific kp value
+        # ki value, and kd value
+        self.kp_ = float(kp)
+        self.ki_ = float(ki)
+        self.kd_ = float(kd)
+
+        # Set max wind up
+        self.max_windup_ = float(max_windup)
+
+        # Store relevant data
+        self.last_timestamp_ = 0.0
+        self.set_point_ = 0.0
+        self.error_sum_ = 0.0
+        self.last_error_ = 0.0
+        self.alpha = 1.0
+
     def reset(self):
-        #TODO
-        pass
+        self.set_point_ = 0.0
+        self.kp_ = 0.0
+        self.ki_ = 0.0
+        self.kd_ = 0.0
+        self.error_sum_ = 0.0
+        self.last_timestamp_ = 0.0
+        self.last_error_ = 0
+        self.last_last_error_ = 0
+        self.last_windup_ = 0.0
 
     def setTarget(self, target):
-        #TODO
-        pass
+        self.set_point_ = float(target)
 
     def setKP(self, kp):
-        #TODO
-        pass
+        self.kp_ = float(kp)
 
     def setKI(self, ki):
-        #TODO
-        pass
+        self.ki_ = float(ki)
 
     def setKD(self, kd):
-        #TODO
-        pass
+        self.kd_ = float(kd)
 
     def setMaxWindup(self, max_windup):
-        #TODO
-        pass
+        self.max_windup_ = int(max_windup)
 
     def update(self, measured_value, timestamp):
-        #TODO
-        pass
+        delta_time = timestamp - self.last_timestamp_
+        if delta_time == 0:
+            # Delta time is zero
+            return 0
 
+        # Calculate the error
+        error = self.set_point_ - measured_value
 
+        # Set the last_timestamp_
+        self.last_timestamp_ = timestamp
+
+        # Sum the errors
+        self.error_sum_ += error * delta_time
+
+        # Find delta_error
+        delta_error = error - self.last_error_
+
+        # Update the past error
+        self.last_error_ = error
+
+        # Address max windup
+        self.error_sum_ = min(self.error_sum_, self.max_windup_)
+        self.error_sum_ = max(self.error_sum_, -self.max_windup_)
+
+        # Proportional error
+        p = self.kp_ * error
+
+        # Integral error
+        i = self.ki_ * self.error_sum_
+
+        # Recalculate the derivative error here incorporating
+        # derivative smoothing!
+        d = self.kd_ * (self.alpha * delta_error / delta_time +
+                        (1 - self.alpha) * self.last_error_ / delta_time)
+
+        # Set the control effort
+        u = p + i + d
+        return u
